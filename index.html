@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Obrzeży Trawnikowych</title>
+    <title>Kalkulator Materiałów na Obrzeża Trawnikowe</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin: 0 auto;
-            max-width: 600px;
+            max-width: 1280px;
         }
         label {
             display: block;
@@ -56,80 +56,107 @@
     </style>
 </head>
 <body>
-    <h2>Kalkulator Obrzeży Trawnikowych</h2>
-    <form id="lawnEdgingCalculator">
-        <label for="length">Długość obrzeża (w metrach):</label>
-        <input type="number" id="length" placeholder="Podaj długość obrzeża w metrach" required>
+    <form id="borderCalculatorForm">
+        <label for="length">Długość obrzeża (m):</label>
+        <input type="number" id="length" placeholder="Podaj długość obrzeża" required>
 
-        <label for="width">Szerokość kostki brukowej (w centymetrach):</label>
-        <input type="number" id="width" placeholder="Podaj szerokość kostki brukowej w cm" required>
+        <label for="width">Szerokość kostki brukowej (cm):</label>
+        <input type="number" id="width" placeholder="Podaj szerokość kostki w cm" required>
 
-        <label for="rows">Wybór rodzaju obrzeża:</label>
-        <select id="rows">
+        <label for="rowCount">Wybór rodzaju obrzeża:</label>
+        <select id="rowCount">
             <option value="1">Jeden rząd kostki brukowej</option>
             <option value="2">Dwa rzędy kostki brukowej</option>
         </select>
 
-        <label for="pavingType">Wybór ceny kostki:</label>
-        <select id="pavingType" onchange="toggleCustomPriceField()">
-            <option value="35">Kostka przemysłowa (35 zł/m²)</option>
-            <option value="50">Kostka ozdobna (50 zł/m²)</option>
-            <option value="15">Obrzeże 6 cm na leżąco (15 zł/mb)</option>
-            <option value="custom">Własna cena</option>
+        <label for="pavingType">Wybór rodzaju kostki brukowej:</label>
+        <select id="pavingType">
+            <option value="35">Kostka przemysłowa: 35 zł/m²</option>
+            <option value="50">Kostka ozdobna: 50 zł/m²</option>
+            <option value="100">Kostka granitowa: 100 zł/m²</option>
         </select>
 
-        <div id="customPriceField" style="display: none;">
-            <label for="customPrice">Wpisz własną cenę kostki (zł/m²):</label>
-            <input type="number" id="customPrice" placeholder="Wpisz własną cenę kostki" step="0.01">
+        <label for="concretePrice">Cena betonu B20 do układania obrzeża (zł/m³):</label>
+        <select id="concretePrice" onchange="toggleCustomConcreteField()">
+            <option value="500">500 zł/m³</option>
+            <option value="custom">Własna wartość</option>
+        </select>
+
+        <div id="customConcreteField" style="display: none;">
+            <label for="customConcrete">Podaj własną cenę betonu (zł/m³):</label>
+            <input type="number" id="customConcrete" placeholder="Wpisz cenę betonu" step="0.01">
         </div>
 
-        <button type="button" onclick="calculateEdging()">Oblicz</button>
+        <label for="laborCost">Koszt robocizny (zł/mb):</label>
+        <select id="laborCost" onchange="toggleCustomLaborField()">
+            <option value="0">Praca wykonywana samemu</option>
+            <option value="custom">Podaj koszt robocizny</option>
+        </select>
+
+        <div id="customLaborField" style="display: none;">
+            <label for="customLabor">Podaj koszt robocizny (zł/mb):</label>
+            <input type="number" id="customLabor" placeholder="Wpisz koszt robocizny" step="0.01">
+        </div>
+
+        <button type="button" onclick="calculateMaterials()">Oblicz</button>
     </form>
 
     <div id="results" class="results" style="display: none;">
         <h4>Wyniki:</h4>
-        <p>Ilość kostki brukowej: <span id="pavingArea"></span> m²</p>
-        <p>Objętość betonu: <span id="concreteVolume"></span> m³</p>
-        <p>Cena betonu: <span id="concreteCost"></span> zł</p>
-        <p>Cena kostki: <span id="pavingCost"></span> zł</p>
-        <p><strong>Całkowity koszt: <span id="totalCost"></span> zł</strong></p>
+        <p>Ilość m² kostki do zamówienia: <span id="pavingArea"></span> m²</p>
+        <p>Ilość betonu potrzebnego do osadzenia obrzeża: <span id="concreteVolume"></span> m³</p>
+
+        <h4>Koszty:</h4>
+        <p>Kostka: <span id="pavingCost"></span> zł</p>
+        <p>Beton: <span id="concreteCost"></span> zł</p>
+        <p>Robocizna: <span id="laborCostTotal"></span> zł</p>
+        <h4>Suma kosztów: <span id="totalCost"></span> zł</h4>
     </div>
 
     <script>
-        function toggleCustomPriceField() {
-            const pavingType = document.getElementById('pavingType').value;
-            document.getElementById('customPriceField').style.display = pavingType === "custom" ? "block" : "none";
+        function toggleCustomConcreteField() {
+            const concretePrice = document.getElementById('concretePrice').value;
+            document.getElementById('customConcreteField').style.display = concretePrice === "custom" ? "block" : "none";
         }
 
-        function calculateEdging() {
-            const length = parseFloat(document.getElementById('length').value);
-            const width = parseFloat(document.getElementById('width').value) / 100; // cm to m
-            const rows = parseInt(document.getElementById('rows').value);
-            let pavingPrice = document.getElementById('pavingType').value === "custom" 
-                ? parseFloat(document.getElementById('customPrice').value) 
-                : parseFloat(document.getElementById('pavingType').value);
+        function toggleCustomLaborField() {
+            const laborCost = document.getElementById('laborCost').value;
+            document.getElementById('customLaborField').style.display = laborCost === "custom" ? "block" : "none";
+        }
 
-            if (isNaN(length) || isNaN(width) || isNaN(pavingPrice) || length <= 0 || width <= 0 || pavingPrice <= 0) {
+        function calculateMaterials() {
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value) / 100; // cm to meters
+            const rowCount = parseInt(document.getElementById('rowCount').value);
+            const pavingType = parseFloat(document.getElementById('pavingType').value);
+            const concretePrice = document.getElementById('concretePrice').value === "custom"
+                ? parseFloat(document.getElementById('customConcrete').value)
+                : parseFloat(document.getElementById('concretePrice').value);
+            const laborCost = document.getElementById('laborCost').value === "custom"
+                ? parseFloat(document.getElementById('customLabor').value)
+                : parseFloat(document.getElementById('laborCost').value);
+
+            if (isNaN(length) || length <= 0 || isNaN(width) || width <= 0 || isNaN(rowCount) || isNaN(pavingType) || isNaN(concretePrice) || isNaN(laborCost)) {
                 alert("Proszę podać poprawne dane.");
                 return;
             }
 
-            // Obliczenia ilości kostki brukowej
-            const pavingArea = rows * length * width; // m²
-            const pavingCost = pavingArea * pavingPrice;
+            // Obliczenia ilości materiałów
+            const pavingArea = length * width * rowCount; // m²
+            const concreteVolume = length * 0.07 * width * rowCount; // m³
 
-            // Obliczenia objętości betonu
-            const concreteVolume = length * (width) * 0.01; // Beton na każdy centymetr szerokości kostki
-            const concreteCost = concreteVolume * 500; // 500 zł/m³
+            // Koszty
+            const pavingCost = pavingArea * pavingType;
+            const concreteCost = concreteVolume * concretePrice;
+            const laborCostTotal = laborCost * length;
+            const totalCost = pavingCost + concreteCost + laborCostTotal;
 
-            // Obliczenia całkowitego kosztu
-            const totalCost = pavingCost + concreteCost;
-
-            // Wyświetlenie wyników
+            // Wyświetlanie wyników
             document.getElementById('pavingArea').textContent = pavingArea.toFixed(2);
-            document.getElementById('concreteVolume').textContent = concreteVolume.toFixed(3);
-            document.getElementById('concreteCost').textContent = concreteCost.toFixed(2);
+            document.getElementById('concreteVolume').textContent = concreteVolume.toFixed(2);
             document.getElementById('pavingCost').textContent = pavingCost.toFixed(2);
+            document.getElementById('concreteCost').textContent = concreteCost.toFixed(2);
+            document.getElementById('laborCostTotal').textContent = laborCostTotal.toFixed(2);
             document.getElementById('totalCost').textContent = totalCost.toFixed(2);
 
             document.getElementById('results').style.display = 'block';
