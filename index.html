@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Obrzeży Trawnikowych</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f6f6f6;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0f4e55;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .results {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        h4 {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Kalkulator Obrzeży Trawnikowych</h2>
+    <form id="lawnEdgingCalculator">
+        <label for="length">Długość obrzeża (w metrach):</label>
+        <input type="number" id="length" placeholder="Podaj długość obrzeża w metrach" required>
+
+        <label for="width">Szerokość kostki brukowej (w centymetrach):</label>
+        <input type="number" id="width" placeholder="Podaj szerokość kostki brukowej w cm" required>
+
+        <label for="rows">Wybór rodzaju obrzeża:</label>
+        <select id="rows">
+            <option value="1">Jeden rząd kostki brukowej</option>
+            <option value="2">Dwa rzędy kostki brukowej</option>
+        </select>
+
+        <label for="pavingType">Wybór ceny kostki:</label>
+        <select id="pavingType" onchange="toggleCustomPriceField()">
+            <option value="35">Kostka przemysłowa (35 zł/m²)</option>
+            <option value="50">Kostka ozdobna (50 zł/m²)</option>
+            <option value="15">Obrzeże 6 cm na leżąco (15 zł/mb)</option>
+            <option value="custom">Własna cena</option>
+        </select>
+
+        <div id="customPriceField" style="display: none;">
+            <label for="customPrice">Wpisz własną cenę kostki (zł/m²):</label>
+            <input type="number" id="customPrice" placeholder="Wpisz własną cenę kostki" step="0.01">
+        </div>
+
+        <button type="button" onclick="calculateEdging()">Oblicz</button>
+    </form>
+
+    <div id="results" class="results" style="display: none;">
+        <h4>Wyniki:</h4>
+        <p>Ilość kostki brukowej: <span id="pavingArea"></span> m²</p>
+        <p>Objętość betonu: <span id="concreteVolume"></span> m³</p>
+        <p>Cena betonu: <span id="concreteCost"></span> zł</p>
+        <p>Cena kostki: <span id="pavingCost"></span> zł</p>
+        <p><strong>Całkowity koszt: <span id="totalCost"></span> zł</strong></p>
+    </div>
+
+    <script>
+        function toggleCustomPriceField() {
+            const pavingType = document.getElementById('pavingType').value;
+            document.getElementById('customPriceField').style.display = pavingType === "custom" ? "block" : "none";
+        }
+
+        function calculateEdging() {
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value) / 100; // cm to m
+            const rows = parseInt(document.getElementById('rows').value);
+            let pavingPrice = document.getElementById('pavingType').value === "custom" 
+                ? parseFloat(document.getElementById('customPrice').value) 
+                : parseFloat(document.getElementById('pavingType').value);
+
+            if (isNaN(length) || isNaN(width) || isNaN(pavingPrice) || length <= 0 || width <= 0 || pavingPrice <= 0) {
+                alert("Proszę podać poprawne dane.");
+                return;
+            }
+
+            // Obliczenia ilości kostki brukowej
+            const pavingArea = rows * length * width; // m²
+            const pavingCost = pavingArea * pavingPrice;
+
+            // Obliczenia objętości betonu
+            const concreteVolume = length * (width) * 0.01; // Beton na każdy centymetr szerokości kostki
+            const concreteCost = concreteVolume * 500; // 500 zł/m³
+
+            // Obliczenia całkowitego kosztu
+            const totalCost = pavingCost + concreteCost;
+
+            // Wyświetlenie wyników
+            document.getElementById('pavingArea').textContent = pavingArea.toFixed(2);
+            document.getElementById('concreteVolume').textContent = concreteVolume.toFixed(3);
+            document.getElementById('concreteCost').textContent = concreteCost.toFixed(2);
+            document.getElementById('pavingCost').textContent = pavingCost.toFixed(2);
+            document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
